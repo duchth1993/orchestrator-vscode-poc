@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orchestrator — AI Co-Pilot for Endless SDK</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0c14;
+            --sidebar: #16101c;
+            --editor-bg: #1a1223;
+            --text: #e0e0e0;
+            --red: #ff2a5c;
+            --white: #ffffff;
+            --comment: #7a9c78;
+            --keyword: #c792ea;
+            --string: #c3e88d;
+            --func: #82aaff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .vscode-container {
+            display: flex;
+            max-width: 1200px;
+            height: 800px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(255, 42, 92, 0.3);
+            border: 1px solid rgba(255, 42, 92, 0.2);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--sidebar);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ff2a5c, #ff003c);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(to right, #ff2a5c, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .agent {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 42, 92, 0.1);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 42, 92, 0.3);
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff2a5c, #8a003c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 18px;
+        }
+
+        .agent-info h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .agent-info p {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .goal-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 42, 92, 0.4);
+            border-radius: 8px;
+            color: white;
+            font-family: 'JetBrains Mono';
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .goal-input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 2px rgba(255, 42, 92, 0.2);
+        }
+
+        .generate-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, #ff2a5c, #ff003c);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono';
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: scale(1.03);
+        }
+
+        .suggestions {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 42, 92, 0.2);
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        .suggestion-card h5 {
+            color: var(--red);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .export-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 42, 92, 0.2);
+            color: var(--red);
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono';
+            font-size: 13px;
+            cursor: pointer;
+            width: fit-content;
+        }
+
+        /* Editor */
+        .editor {
+            flex: 1;
+            background: var(--editor-bg);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 6px 6px 0 0;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab.active {
+            background: var(--sidebar);
+            border: 1px solid rgba(255, 42, 92, 0.3);
+            border-bottom: none;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'JetBrains Mono';
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .comment { color: var(--comment); }
+        .keyword { color: var(--keyword); font-weight: 600; }
+        .string { color: var(--string); }
+        .func { color: var(--func); }
+        .symbol { color: #ffffff; }
+
+        .highlight {
+            background: rgba(255, 42, 92, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: help;
+            text-decoration: underline dotted var(--red);
+        }
+
+        .glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,42,92,0.15) 0%, transparent 70%);
+            top: 20%;
+            right: 10%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.3; }
+        }
+
+        .pulse {
+            animation: pulse 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="vscode-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">🦾</div>
+                <div class="logo-text">Orchestrator</div>
+            </div>
+
+            <div class="agent">
+                <div class="agent-avatar">🤖</div>
+                <div class="agent-info">
+                    <h4>AI Co-Pilot</h4>
+                    <p>sly · confident · always listening</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">🎯 What do you want to build?</div>
+                <input 
+                    type="text" 
+                    class="goal-input" 
+                    id="goal" 
+                    placeholder="// e.g., I want a gasless tip bot on Luffa"
+                    value="// I want to build a private chat on Luffa"
+                />
+                <button class="generate-btn" onclick="generate()">
+                    🧠 Generate Flow
+                </button>
+            </div>
+
+            <div class="suggestions" id="suggestions">
+                <!-- Suggestions will appear here -->
+            </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="editor">
+            <div class="glow pulse"></div>
+            <div class="editor-header">
+                <div class="tab active">tip-bot.js</div>
+                <div class="tab">package.json</div>
+            </div>
+            <div class="code-block" id="code">
+                <span class="comment">// 🎯 Goal: Build a private, gasless tip bot on Luffa</span><br>
+                <span class="keyword">import</span> { wallet, sponsoredTx } <span class="keyword">from</span> <span class="string">'@endless/sdk'</span>;<br><br>
+
+                <span class="keyword">async function</span> sendTip(receiver, amount) {<br>
+                  &nbsp;&nbsp;<span class="keyword">const</span> tx = <span class="keyword">await</span> <span class="highlight" title="🔐 Uses Endless Sponsored Transaction — user pays $0 gas">sponsoredTx</span>({<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;to: receiver,<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;value: amount,<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;data: <span class="string">'tip'</span><br>
+                  &nbsp;&nbsp;});<br><br>
+                  
+                  &nbsp;&nbsp;<span class="keyword">return await</span> wallet.<span class="highlight" title="🧠 Signs with Social DID + ZK-proof — no email leaked">signZKProof</span>(tx);<br>
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generate() {
+            const goal = document.getElementById('goal').value.trim();
+            if (!goal) {
+                alert('Please describe what you want to build!');
+                return;
+            }
+
+            const suggestions = document.getElementById('suggestions');
+            suggestions.innerHTML = `
+                <div class="suggestion-card">
+                    <h5>✅ AI Flow Generated</h5>
+                    <p><strong>SDK Integration:</strong> <code>sponsoredTx()</code> + <code>signZKProof()</code></p>
+                    <p><strong>ZK Insight:</strong> Proves your DID without revealing identity.</p>
+                    <p><strong>UX Tip:</strong> Add a "Tip Sent!" confetti animation 🎉</p>
+                    <button class="export-btn" onclick="exportRepo()">
+                        🚀 Export to GitHub
+                    </button>
+                </div>
+            `;
+        }
+
+        function exportRepo() {
+            alert('✅ Exported!\n\nGitHub repo created:\nhttps://github.com/duchth1993/tip-bot-poc\n\nFigma UI + Testnet Deployment ready.');
+        }
+
+        // Auto-generate on load for demo effect
+        setTimeout(() => {
+            document.getElementById('goal').value = "// I want a private chat on Luffa with ZK moderation";
+            generate();
+        }, 800);
+    </script>
+</body>
+</html>
